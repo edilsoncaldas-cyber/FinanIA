@@ -27,23 +27,36 @@
         .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; color: #475569; }
         .markdown-body li { margin-bottom: 0.25rem; }
         .markdown-body strong { color: #0f172a; }
+
+        /* Full Screen Initial Loader */
+        #app-loader { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Loading Screen (Conectando à Nuvem) -->
+    <div id="app-loader">
+        <div class="loader mb-4 w-12 h-12 border-4 border-blue-500 border-t-transparent"></div>
+        <h2 class="text-xl font-bold text-slate-800">FinanIA</h2>
+        <p class="text-sm text-slate-500 mt-2 flex items-center gap-2">
+            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+            Sincronizando com a nuvem...
+        </p>
+    </div>
 
     <!-- Toast Notifications -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
 
     <!-- Modais de Autenticação e Telas -->
     <!-- Tela de Login -->
-    <div id="login-screen" class="flex-1 flex items-center justify-center p-4">
+    <div id="login-screen" class="hidden flex-1 flex items-center justify-center p-4">
         <div class="glass-card rounded-2xl p-8 w-full max-w-md">
             <div class="text-center mb-8">
                 <div class="flex justify-center mb-4">
                     <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <h1 class="text-3xl font-bold gradient-text">FinanIA</h1>
-                <p class="text-sm text-slate-500 mt-2">Controle financeiro inteligente com IA</p>
+                <p class="text-sm text-slate-500 mt-2">Controle financeiro inteligente na Nuvem</p>
             </div>
             
             <form id="login-form" class="space-y-4">
@@ -65,9 +78,6 @@
             <div class="mt-6 text-sm text-center text-slate-600">
                 Não tem uma conta? <button type="button" onclick="appState.showScreen('register-screen')" class="text-blue-600 hover:text-blue-800 font-medium">Criar conta</button>
             </div>
-            <div class="mt-4 text-xs text-center text-slate-400">
-                Teste rápido: user1@teste.com (Senha: 123)
-            </div>
         </div>
     </div>
 
@@ -86,6 +96,10 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
                     <input type="email" id="reg-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp (com DDD)</label>
+                    <input type="tel" id="reg-phone" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="11999999999" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
@@ -167,10 +181,13 @@
             <div class="flex items-center gap-2">
                 <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span class="text-xl font-bold gradient-text hidden sm:block">FinanIA</span>
+                <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 flex items-center gap-1 hidden md:flex">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Nuvem
+                </span>
             </div>
             <div class="flex items-center gap-4">
                 <span id="user-greeting" class="text-sm font-medium text-slate-600"></span>
-                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">Trocar Senha</button>
+                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors hidden sm:block">Trocar Senha</button>
                 <button onclick="appState.logout()" class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">Sair</button>
             </div>
         </nav>
@@ -207,7 +224,7 @@
                         <form id="transaction-form" class="space-y-4">
                             <div>
                                 <label class="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
-                                <select id="trans-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" onchange="updateCategories()">
+                                <select id="trans-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" onchange="window.updateCategories()">
                                     <option value="despesa">Despesa</option>
                                     <option value="receita">Receita</option>
                                 </select>
@@ -273,8 +290,8 @@
                                     <input type="text" id="inv-card" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1">Mês de Vencimento</label>
-                                    <input type="month" id="inv-month" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Data de Vencimento</label>
+                                    <input type="date" id="inv-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-slate-600 mb-1">Valor (R$)</label>
@@ -354,25 +371,35 @@
         </div>
     </div>
 
-    <script>
-        // --- 1. CONFIGURAÇÕES E ESTADOS GERAIS ---
-        
-        // Simulação de banco de dados e controle de autenticação
+    <!-- Scripts da Aplicação Integrados com Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Inicialização do Firebase via Variáveis de Ambiente
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let fsDb = null;
+        let auth = null;
+        let envUserId = null;
+        let isCloudReady = false;
+
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            fsDb = getFirestore(app);
+        }
+
+        // Base de Dados Local (Atualizada automaticamente pelo Firebase)
         const db = {
-            users: [
-                { email: 'user1@teste.com', password: '123', name: 'Usuário Teste', verified: true }
-            ],
-            pendingVerifications: {}, // Armazena { email: code }
-            resetCodes: {}, // Armazena { email: code }
-            
-            transactions: [
-                { id: 1, userEmail: 'user1@teste.com', type: 'receita', category: 'Receita', desc: 'Salário', amount: 5000, date: new Date().toISOString().split('T')[0] },
-                { id: 2, userEmail: 'user1@teste.com', type: 'despesa', category: 'Casa', desc: 'Aluguel', amount: 1500, date: new Date().toISOString().split('T')[0] },
-                { id: 3, userEmail: 'user1@teste.com', type: 'despesa', category: 'Alimentação', desc: 'Supermercado', amount: 600, date: new Date().toISOString().split('T')[0] }
-            ],
-            invoices: [
-                { id: 1, userEmail: 'user1@teste.com', card: 'Nubank', month: '2026-05', amount: 850.50 }
-            ]
+            users: [],
+            transactions: [],
+            invoices: [],
+            pendingVerifications: {}, 
+            resetCodes: {} 
         };
 
         const CATEGORIES = {
@@ -382,18 +409,79 @@
 
         const appState = {
             currentUser: null,
-            currentEmailContext: null, // Guarda o e-mail durante os processos de verificação e reset
+            currentEmailContext: null, 
+            listeners: [], // Para limpar onSnapshots se necessário
             
             init() {
-                // Set default date to today
                 document.getElementById('trans-date').value = new Date().toISOString().split('T')[0];
-                // Set default month to next month for invoices
                 let nextMonth = new Date();
                 nextMonth.setMonth(nextMonth.getMonth() + 1);
-                document.getElementById('inv-month').value = nextMonth.toISOString().slice(0, 7);
+                document.getElementById('inv-date').value = nextMonth.toISOString().split('T')[0];
                 
-                updateCategories();
+                window.updateCategories();
                 this.setupEventListeners();
+
+                // Autenticação Silenciosa Inicial do Firebase Cloud
+                if (auth) {
+                    const initAuth = async () => {
+                        try {
+                            if (initToken) await signInWithCustomToken(auth, initToken);
+                            else await signInAnonymously(auth);
+                        } catch(e) {
+                            console.error("Erro no Auth", e);
+                            document.getElementById('app-loader').style.display = 'none';
+                        }
+                    };
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            envUserId = user.uid;
+                            isCloudReady = true;
+                            this.setupCloudListeners();
+                            // Esconde o loader quando Firebase carrega
+                            setTimeout(() => { document.getElementById('app-loader').style.display = 'none'; this.showScreen('login-screen'); }, 800);
+                        } else {
+                            envUserId = null;
+                        }
+                    });
+
+                    initAuth();
+                } else {
+                    // Sem config do firebase (Local)
+                    document.getElementById('app-loader').style.display = 'none';
+                    this.showScreen('login-screen');
+                    showToast('Modo de demonstração sem nuvem.', 'info');
+                }
+            },
+
+            setupCloudListeners() {
+                if(!envUserId) return;
+                
+                // 1. Ouve Utilizadores App
+                const unsubUsers = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users'), 
+                    (snapshot) => { db.users = snapshot.docs.map(d => ({...d.data(), id: d.id})); }, 
+                    (err) => console.error("Erro users", err)
+                );
+
+                // 2. Ouve Transações
+                const unsubTrans = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions'), 
+                    (snapshot) => { 
+                        db.transactions = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
+                        if(this.currentUser) this.refreshDashboard();
+                    }, 
+                    (err) => console.error("Erro transactions", err)
+                );
+
+                // 3. Ouve Faturas
+                const unsubInv = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices'), 
+                    (snapshot) => { 
+                        db.invoices = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
+                        if(this.currentUser) this.refreshDashboard();
+                    }, 
+                    (err) => console.error("Erro invoices", err)
+                );
+
+                this.listeners = [unsubUsers, unsubTrans, unsubInv];
             },
 
             showScreen(screenId) {
@@ -423,33 +511,48 @@
                     document.getElementById('user-greeting').textContent = `Olá, ${user.name}`;
                     this.refreshDashboard();
                     showToast('Login realizado com sucesso!', 'success');
+                    
+                    this.checkWhatsAppAlerts();
                 } else {
                     showToast('E-mail ou senha incorretos.', 'error');
                 }
             },
 
-            register(name, email, password) {
+            async register(name, email, phone, password) {
                 if (db.users.find(u => u.email === email)) {
                     showToast('Este e-mail já está em uso.', 'error');
                     return;
                 }
                 
-                db.users.push({ email, password, name, verified: false });
-                db.pendingVerifications[email] = '1234'; // Código Simulado
+                const newUser = { email, phone, password, name, verified: false };
+                
+                if(isCloudReady) {
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users'), newUser);
+                } else {
+                    db.users.push({...newUser, id: Date.now().toString()});
+                }
+                
+                db.pendingVerifications[email] = '1234'; // Mock Email
                 this.currentEmailContext = email;
                 
                 document.getElementById('verify-email-display').textContent = email;
                 this.showScreen('verify-screen');
-                showToast('Conta criada! Enviamos um código para seu e-mail.', 'success');
+                showToast('Conta criada! Enviamos um código.', 'success');
             },
 
-            verifyEmail(code) {
+            async verifyEmail(code) {
                 if (db.pendingVerifications[this.currentEmailContext] === code) {
                     const user = db.users.find(u => u.email === this.currentEmailContext);
-                    if (user) user.verified = true;
+                    if (user) {
+                        if(isCloudReady) {
+                            await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', user.id), { verified: true });
+                        } else {
+                            user.verified = true;
+                        }
+                    }
                     delete db.pendingVerifications[this.currentEmailContext];
                     
-                    showToast('E-mail verificado com sucesso! Faça login.', 'success');
+                    showToast('E-mail verificado! Faça login.', 'success');
                     this.showScreen('login-screen');
                     document.getElementById('login-email').value = this.currentEmailContext;
                     document.getElementById('login-password').value = '';
@@ -461,35 +564,42 @@
             requestPasswordReset(email) {
                 const user = db.users.find(u => u.email === email);
                 if (!user) {
-                    // Por segurança em apps reais, não expomos se o e-mail existe
                     showToast('Se o e-mail existir, um código foi enviado.', 'info');
                     this.currentEmailContext = email;
                     this.showScreen('reset-screen');
                     return;
                 }
-                db.resetCodes[email] = '1234'; // Código Simulado
+                db.resetCodes[email] = '1234'; 
                 this.currentEmailContext = email;
                 this.showScreen('reset-screen');
                 showToast('Código de recuperação enviado para o e-mail.', 'info');
             },
 
-            resetPassword(code, newPassword) {
+            async resetPassword(code, newPassword) {
                 if (db.resetCodes[this.currentEmailContext] === code) {
                     const user = db.users.find(u => u.email === this.currentEmailContext);
                     if (user) {
-                        user.password = newPassword;
+                        if(isCloudReady) {
+                            await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', user.id), { password: newPassword });
+                        } else {
+                            user.password = newPassword;
+                        }
                         delete db.resetCodes[this.currentEmailContext];
                         showToast('Senha redefinida com sucesso!', 'success');
                         this.showScreen('login-screen');
                     }
                 } else {
-                    showToast('Código de recuperação inválido.', 'error');
+                    showToast('Código inválido.', 'error');
                 }
             },
 
-            changeInternalPassword(currentPwd, newPwd) {
+            async changeInternalPassword(currentPwd, newPwd) {
                 if (this.currentUser.password === currentPwd) {
-                    this.currentUser.password = newPwd;
+                    if(isCloudReady) {
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', this.currentUser.id), { password: newPwd });
+                    } else {
+                        this.currentUser.password = newPwd;
+                    }
                     document.getElementById('change-pwd-modal').classList.add('hidden');
                     document.getElementById('change-pwd-form').reset();
                     showToast('Senha alterada com sucesso!', 'success');
@@ -502,8 +612,6 @@
                 this.currentUser = null;
                 this.currentEmailContext = null;
                 this.showScreen('login-screen');
-                
-                // Limpar todos os formulários e resquícios da tela
                 document.querySelectorAll('form').forEach(f => f.reset());
                 document.getElementById('ai-response-container').classList.add('hidden');
                 document.getElementById('ai-content').innerHTML = '';
@@ -516,84 +624,126 @@
 
             getUserInvoices() {
                 return db.invoices.filter(i => i.userEmail === this.currentUser.email)
-                                  .sort((a, b) => a.month.localeCompare(b.month));
+                                  .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
             },
 
-            addTransaction(type, category, desc, amount, date) {
-                const newTrans = {
-                    id: Date.now(),
-                    userEmail: this.currentUser.email,
-                    type, category, desc, amount: parseFloat(amount), date
-                };
-                db.transactions.push(newTrans);
-                this.refreshDashboard();
+            async addTransaction(type, category, desc, amount, date) {
+                const newTrans = { userEmail: this.currentUser.email, type, category, desc, amount: parseFloat(amount), date };
+                
+                if(isCloudReady) {
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions'), newTrans);
+                } else {
+                    db.transactions.push({...newTrans, id: Date.now().toString()});
+                    this.refreshDashboard();
+                }
                 showToast('Lançamento adicionado.', 'success');
             },
 
-            deleteTransaction(id) {
-                db.transactions = db.transactions.filter(t => t.id !== id);
-                this.refreshDashboard();
+            async deleteTransaction(id) {
+                if(isCloudReady) {
+                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions', id));
+                } else {
+                    db.transactions = db.transactions.filter(t => t.id !== id);
+                    this.refreshDashboard();
+                }
                 showToast('Lançamento removido.', 'info');
             },
 
-            addInvoice(card, month, amount) {
-                const newInv = {
-                    id: Date.now(),
-                    userEmail: this.currentUser.email,
-                    card, month, amount: parseFloat(amount)
-                };
-                db.invoices.push(newInv);
-                this.refreshDashboard();
+            async addInvoice(card, dueDate, amount) {
+                const newInv = { userEmail: this.currentUser.email, card, dueDate, amount: parseFloat(amount), paid: false };
+                
+                if(isCloudReady) {
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices'), newInv);
+                } else {
+                    db.invoices.push({...newInv, id: Date.now().toString()});
+                    this.refreshDashboard();
+                }
                 showToast('Fatura projetada adicionada.', 'success');
             },
 
-            deleteInvoice(id) {
-                db.transactions = db.transactions.filter(t => t.id !== id);
-                db.invoices = db.invoices.filter(i => i.id !== id);
-                this.refreshDashboard();
-                showToast('Excluído.', 'info');
+            async deleteInvoice(id) {
+                if(isCloudReady) {
+                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices', id));
+                } else {
+                    db.invoices = db.invoices.filter(i => i.id !== id);
+                    this.refreshDashboard();
+                }
+                showToast('Fatura excluída.', 'info');
+            },
+
+            async toggleInvoicePaid(id) {
+                const invoice = db.invoices.find(i => i.id === id);
+                if(invoice) {
+                    const newStatus = !invoice.paid;
+                    if(isCloudReady) {
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices', id), { paid: newStatus });
+                    } else {
+                        invoice.paid = newStatus;
+                        this.refreshDashboard();
+                    }
+                    if(newStatus) showToast(`Baixa realizada no cartão ${invoice.card}!`, 'success');
+                }
+            },
+
+            checkWhatsAppAlerts() {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const unpaidInvoices = this.getUserInvoices().filter(i => !i.paid);
+                let alertsSent = 0;
+                
+                unpaidInvoices.forEach(i => {
+                    const dueParts = i.dueDate.split('-'); 
+                    const due = new Date(dueParts[0], dueParts[1] - 1, dueParts[2]);
+                    due.setHours(0,0,0,0);
+                    
+                    const diffTime = due.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let message = "";
+                    if (diffDays === 2) message = `A fatura do cartão *${i.card}* vence em 2 dias.`;
+                    else if (diffDays === 1) message = `A fatura do cartão *${i.card}* vence amanhã!`;
+                    else if (diffDays === 0) message = `⚠️ A fatura do cartão *${i.card}* vence hoje, evite juros, não esqueça de pagar.`;
+                    
+                    if (message && this.currentUser.phone) {
+                        alertsSent++;
+                        setTimeout(() => {
+                            window.showToast(`<strong>WhatsApp 📱 (${this.currentUser.phone}):</strong><br>${message}`, 'whatsapp');
+                        }, 1200 * alertsSent);
+                    }
+                });
             },
 
             refreshDashboard() {
                 const transactions = this.getUserTransactions();
                 const invoices = this.getUserInvoices();
                 
-                // 1. Atualizar Cards
                 let totalInc = 0;
                 let totalExp = 0;
                 transactions.forEach(t => {
                     if(t.type === 'receita') totalInc += t.amount;
                     else totalExp += t.amount;
                 });
-                
                 const balance = totalInc - totalExp;
 
-                document.getElementById('total-income').textContent = formatCurrency(totalInc);
-                document.getElementById('total-expense').textContent = formatCurrency(totalExp);
-                document.getElementById('total-balance').textContent = formatCurrency(balance);
+                document.getElementById('total-income').textContent = window.formatCurrency(totalInc);
+                document.getElementById('total-expense').textContent = window.formatCurrency(totalExp);
+                document.getElementById('total-balance').textContent = window.formatCurrency(balance);
                 
                 const balCard = document.getElementById('balance-card');
                 const balText = document.getElementById('total-balance');
                 if(balance >= 0) {
-                    balText.classList.remove('text-red-600');
-                    balText.classList.add('text-green-600');
-                    balCard.classList.remove('border-red-500');
-                    balCard.classList.add('border-blue-500');
+                    balText.classList.remove('text-red-600'); balText.classList.add('text-green-600');
+                    balCard.classList.remove('border-red-500'); balCard.classList.add('border-blue-500');
                 } else {
-                    balText.classList.remove('text-green-600');
-                    balText.classList.add('text-red-600');
-                    balCard.classList.remove('border-blue-500');
-                    balCard.classList.add('border-red-500');
+                    balText.classList.remove('text-green-600'); balText.classList.add('text-red-600');
+                    balCard.classList.remove('border-blue-500'); balCard.classList.add('border-red-500');
                 }
 
-                // 2. Renderizar Lista de Transações
                 const tList = document.getElementById('transactions-list');
                 const noT = document.getElementById('no-transactions');
                 tList.innerHTML = '';
-                
-                if (transactions.length === 0) {
-                    noT.classList.remove('hidden');
-                } else {
+                if (transactions.length === 0) noT.classList.remove('hidden');
+                else {
                     noT.classList.add('hidden');
                     transactions.forEach(t => {
                         const isInc = t.type === 'receita';
@@ -608,14 +758,14 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-semibold text-slate-800">${t.desc}</p>
-                                    <p class="text-xs text-slate-500">${t.category} • ${formatDateBr(t.date)}</p>
+                                    <p class="text-xs text-slate-500">${t.category} • ${window.formatDateBr(t.date)}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <span class="text-sm font-bold ${isInc ? 'text-green-600' : 'text-slate-700'}">
-                                    ${isInc ? '+' : '-'} ${formatCurrency(t.amount)}
+                                    ${isInc ? '+' : '-'} ${window.formatCurrency(t.amount)}
                                 </span>
-                                <button onclick="appState.deleteTransaction(${t.id})" class="text-slate-400 hover:text-red-500 p-1" title="Excluir">
+                                <button onclick="appState.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Excluir">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -624,26 +774,32 @@
                     });
                 }
 
-                // 3. Renderizar Lista de Faturas
                 const iList = document.getElementById('invoices-list');
                 const noI = document.getElementById('no-invoices');
                 iList.innerHTML = '';
-                
-                if (invoices.length === 0) {
-                    noI.classList.remove('hidden');
-                } else {
+                if (invoices.length === 0) noI.classList.remove('hidden');
+                else {
                     noI.classList.add('hidden');
                     invoices.forEach(i => {
-                        const [year, month] = i.month.split('-');
+                        const dateStr = window.formatDateBr(i.dueDate);
+                        const isPaid = i.paid;
                         const div = document.createElement('div');
-                        div.className = 'bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative';
+                        div.className = `bg-white p-4 rounded-lg border ${isPaid ? 'border-green-300 bg-green-50/40' : 'border-slate-200'} shadow-sm relative transition-all`;
                         div.innerHTML = `
-                            <button onclick="appState.deleteInvoice(${i.id})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500" title="Excluir">
+                            <div class="absolute top-2 right-8 flex items-center gap-1">
+                                <label class="flex items-center cursor-pointer text-xs text-slate-500 gap-1 hover:text-green-600 transition-colors">
+                                    <input type="checkbox" class="w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500 cursor-pointer" ${isPaid ? 'checked' : ''} onchange="appState.toggleInvoicePaid('${i.id}')">
+                                    ${isPaid ? 'Pago' : 'Baixar'}
+                                </label>
+                            </div>
+                            <button onclick="appState.deleteInvoice('${i.id}')" class="absolute top-2 right-2 text-slate-300 hover:text-red-500" title="Excluir">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
-                            <div class="text-xs font-semibold text-indigo-600 mb-1 uppercase tracking-wider">${month}/${year}</div>
-                            <div class="font-bold text-slate-800">${i.card}</div>
-                            <div class="text-lg font-bold text-slate-700 mt-2">${formatCurrency(i.amount)}</div>
+                            <div class="text-xs font-semibold ${isPaid ? 'text-green-600' : 'text-indigo-600'} mb-1 uppercase tracking-wider">
+                                ${isPaid ? '✔ Fatura Paga' : `Vence em ${dateStr}`}
+                            </div>
+                            <div class="font-bold ${isPaid ? 'text-slate-400 line-through' : 'text-slate-800'}">${i.card}</div>
+                            <div class="text-lg font-bold ${isPaid ? 'text-slate-400' : 'text-slate-700'} mt-2">${window.formatCurrency(i.amount)}</div>
                         `;
                         iList.appendChild(div);
                     });
@@ -651,48 +807,35 @@
             },
 
             setupEventListeners() {
-                // === Eventos de Autenticação ===
                 document.getElementById('login-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.login(document.getElementById('login-email').value.trim(), document.getElementById('login-password').value);
                 });
-
                 document.getElementById('register-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.register(
                         document.getElementById('reg-name').value.trim(),
                         document.getElementById('reg-email').value.trim(),
+                        document.getElementById('reg-phone').value.trim(),
                         document.getElementById('reg-password').value
                     );
                 });
-
                 document.getElementById('verify-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.verifyEmail(document.getElementById('verify-code').value.trim());
                 });
-
                 document.getElementById('forgot-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.requestPasswordReset(document.getElementById('forgot-email').value.trim());
                 });
-
                 document.getElementById('reset-form').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.resetPassword(
-                        document.getElementById('reset-code').value.trim(),
-                        document.getElementById('reset-password').value
-                    );
+                    this.resetPassword(document.getElementById('reset-code').value.trim(), document.getElementById('reset-password').value);
                 });
-
                 document.getElementById('change-pwd-form').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.changeInternalPassword(
-                        document.getElementById('current-pwd').value,
-                        document.getElementById('new-pwd').value
-                    );
+                    this.changeInternalPassword(document.getElementById('current-pwd').value, document.getElementById('new-pwd').value);
                 });
-
-                // === Eventos da Aplicação Interna ===
                 document.getElementById('transaction-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.addTransaction(
@@ -705,12 +848,11 @@
                     document.getElementById('trans-desc').value = '';
                     document.getElementById('trans-amount').value = '';
                 });
-
                 document.getElementById('invoice-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.addInvoice(
                         document.getElementById('inv-card').value.trim(),
-                        document.getElementById('inv-month').value,
+                        document.getElementById('inv-date').value,
                         document.getElementById('inv-amount').value
                     );
                     document.getElementById('inv-card').value = '';
@@ -718,7 +860,6 @@
                 });
             },
 
-            // INTEGRAÇÃO GEMINI IA
             async generateAIAnalysis() {
                 const btn = document.getElementById('btn-ia');
                 const container = document.getElementById('ai-response-container');
@@ -731,29 +872,25 @@
                 loader.classList.remove('hidden');
                 content.innerHTML = '';
 
-                // Preparar dados para o prompt
                 const transactions = this.getUserTransactions();
                 const invoices = this.getUserInvoices();
                 
                 let income = 0;
                 let expensesByCategory = {};
-                
                 transactions.forEach(t => {
                     if(t.type === 'receita') income += t.amount;
-                    else {
-                        expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
-                    }
+                    else expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
                 });
 
-                let futureInvoicesText = invoices.map(i => `${i.card} (${i.month}): ${formatCurrency(i.amount)}`).join('\n') || "Nenhuma fatura futura cadastrada.";
-                let expensesText = Object.entries(expensesByCategory).map(([cat, val]) => `- ${cat}: ${formatCurrency(val)}`).join('\n') || "Nenhuma despesa registrada.";
+                let futureInvoicesText = invoices.map(i => `${i.card} (Vencimento: ${window.formatDateBr(i.dueDate)}): ${window.formatCurrency(i.amount)}`).join('\n') || "Nenhuma fatura futura cadastrada.";
+                let expensesText = Object.entries(expensesByCategory).map(([cat, val]) => `- ${cat}: ${window.formatCurrency(val)}`).join('\n') || "Nenhuma despesa registrada.";
 
                 const prompt = `
                     Você é o FinanIA, um consultor financeiro especialista no Brasil.
                     Analise os dados financeiros do usuário deste mês para fornecer uma devolutiva didática e acionável.
 
                     DADOS DO USUÁRIO:
-                    - Receitas Totais: ${formatCurrency(income)}
+                    - Receitas Totais: ${window.formatCurrency(income)}
                     - Despesas por Categoria:
                     ${expensesText}
                     - Faturas de Cartão de Crédito Projetadas (Futuro):
@@ -761,25 +898,17 @@
 
                     Com base nisso, forneça um relatório estruturado abordando EXATAMENTE os seguintes pontos:
                     1. **Caminho da Excelência ou Erros**: Estamos indo bem ou cometendo erros? Seja honesto. Onde especificamente estão os maiores gargalos ou erros baseado nas categorias?
-                    2. **Projeções e Recuperação/Reserva**: Se o saldo (Receitas - Despesas e Faturas atuais) for negativo ou perigoso, crie um plano de recuperação. Se for positivo, trace uma meta simples para criar ou encorpar o Fundo de Reserva de Emergência.
-                    3. **Recomendações de Investimentos Mensais**: Considere o cenário macroeconômico atual do Brasil (Selic) e sugira as melhores classes de investimentos para este momento (ex: Tesouro Selic, CDBs, Fundos Imobiliários). Diga a rentabilidade média esperada e se é um bom momento para trocar de aplicação (mexer em fundos atuais).
+                    2. **Projeções e Recuperação/Reserva**: Se o saldo for negativo ou perigoso, crie um plano de recuperação. Se positivo, trace meta simples para o Fundo de Reserva.
+                    3. **Recomendações de Investimentos Mensais**: Considere a Selic atual e sugira classes de investimentos (ex: Tesouro Direto, CDBs).
 
-                    FORMATAÇÃO DE SAÍDA:
-                    Retorne APENAS conteúdo em HTML usando tags semânticas (<h3>, <p>, <ul>, <li>, <strong>) para que eu possa renderizar diretamente em uma div. NÃO use markdown delimitado por crases (\`\`\`html). Crie algo bonito de ler.
+                    Retorne APENAS conteúdo em HTML usando tags semânticas (<h3>, <p>, <ul>, <li>, <strong>).
                 `;
 
                 try {
-                    const aiResponse = await fetchGeminiWithRetry(prompt);
-                    // Format output (strip markdown blocks if AI ignored instructions)
-                    let cleanHTML = aiResponse.replace(/```html/g, '').replace(/```/g, '').trim();
-                    content.innerHTML = cleanHTML;
+                    const aiResponse = await window.fetchGeminiWithRetry(prompt);
+                    content.innerHTML = aiResponse.replace(/```html/g, '').replace(/```/g, '').trim();
                 } catch (error) {
-                    content.innerHTML = `
-                        <div class="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">
-                            <strong>Ops!</strong> Não foi possível gerar a análise no momento. Tente novamente mais tarde.
-                            <br><small class="text-red-500">${error.message}</small>
-                        </div>
-                    `;
+                    content.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg"><strong>Ops!</strong> Não foi possível gerar a análise.</div>`;
                 } finally {
                     loader.classList.add('hidden');
                     btn.disabled = false;
@@ -788,9 +917,10 @@
             }
         };
 
-        // --- FUNÇÕES UTILITÁRIAS ---
+        // Exportando para o escopo Global (window) para que o HTML embutido consiga chamar
+        window.appState = appState;
 
-        function updateCategories() {
+        window.updateCategories = function() {
             const type = document.getElementById('trans-type').value;
             const select = document.getElementById('trans-category');
             select.innerHTML = '';
@@ -800,98 +930,57 @@
                 opt.textContent = cat;
                 select.appendChild(opt);
             });
-        }
+        };
 
-        function formatCurrency(value) {
+        window.formatCurrency = function(value) {
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-        }
+        };
 
-        function formatDateBr(dateString) {
+        window.formatDateBr = function(dateString) {
+            if(!dateString) return '';
             const [y, m, d] = dateString.split('-');
             return `${d}/${m}/${y}`;
-        }
+        };
 
-        function showToast(message, type = 'info') {
+        window.showToast = function(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
             let bgClass = 'bg-white border-slate-200 text-slate-800';
             let icon = `<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
             
-            if(type === 'success') {
-                bgClass = 'bg-green-50 border-green-200 text-green-800';
-                icon = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-            } else if (type === 'error') {
-                bgClass = 'bg-red-50 border-red-200 text-red-800';
-                icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-            }
+            if(type === 'success') { bgClass = 'bg-green-50 border-green-200 text-green-800'; icon = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`; } 
+            else if (type === 'error') { bgClass = 'bg-red-50 border-red-200 text-red-800'; icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; } 
+            else if (type === 'whatsapp') { bgClass = 'bg-[#dcf8c6] border-[#25D366] text-slate-800 shadow-lg'; icon = `<svg class="w-6 h-6 text-[#128C7E] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`; }
 
             toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg border transform transition-all duration-300 translate-x-full ${bgClass}`;
-            toast.innerHTML = `${icon} <span class="text-sm font-medium">${message}</span>`;
+            toast.innerHTML = `${icon} <span class="text-sm font-medium w-full">${message}</span>`;
             
             container.appendChild(toast);
-            
-            // Animate in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-x-full');
-            });
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            const delay = type === 'whatsapp' ? 6000 : 3000;
+            setTimeout(() => { toast.classList.add('translate-x-full'); toast.classList.add('opacity-0'); setTimeout(() => toast.remove(), 300); }, delay);
+        };
 
-            // Remove after 3s
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        // --- GEMINI API INTEGRAÇÃO (COM EXPONENTIAL BACKOFF) ---
-        
-        async function fetchGeminiWithRetry(prompt, retries = 5) {
-            const apiKey = ""; // API Key fornecida pelo ambiente em tempo de execução
+        window.fetchGeminiWithRetry = async function(prompt, retries = 5) {
+            const apiKey = ""; // API Key em tempo de execução
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const delays = [1000, 2000, 4000, 8000, 16000];
-
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { 
-                    parts: [{ text: "Você é um analista financeiro. Responda estritamente usando tags HTML, sem backticks ou formatação Markdown." }] 
-                }
-            };
+            const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: "Você é um analista financeiro. Responda estritamente usando tags HTML, sem backticks." }] } };
 
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!response.ok) {
-                        const errData = await response.json().catch(()=>({}));
-                        throw new Error(errData.error?.message || `HTTP error! status: ${response.status}`);
-                    }
-                    
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const data = await response.json();
-                    if (!data.candidates || data.candidates.length === 0) {
-                        throw new Error("Sem resposta da IA");
-                    }
                     return data.candidates[0].content.parts[0].text;
-
                 } catch (err) {
-                    if (i === retries - 1) {
-                        console.error("Gemini API falhou após", retries, "tentativas.", err);
-                        throw err;
-                    }
+                    if (i === retries - 1) throw err;
                     await new Promise(res => setTimeout(res, delays[i]));
                 }
             }
-        }
+        };
 
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', () => {
-            appState.init();
-        });
-
+        document.addEventListener('DOMContentLoaded', () => appState.init());
     </script>
 </body>
 </html>
