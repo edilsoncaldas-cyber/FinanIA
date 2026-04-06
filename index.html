@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanIA - Controle Financeiro Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .gradient-text { background: linear-gradient(to right, #2563eb, #10b981); -webkit-background-clip: text; color: transparent; }
+        .ai-gradient { background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        /* Loader */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .markdown-body h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; color: #1e293b; }
+        .markdown-body p { margin-top: 0.5rem; margin-bottom: 0.5rem; color: #475569; line-height: 1.6; }
+        .markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; color: #475569; }
+        .markdown-body li { margin-bottom: 0.25rem; }
+        .markdown-body strong { color: #0f172a; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- Modais de Autenticação e Telas -->
+    <!-- Tela de Login -->
+    <div id="login-screen" class="flex-1 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-4">
+                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h1 class="text-3xl font-bold gradient-text">FinanIA</h1>
+                <p class="text-sm text-slate-500 mt-2">Controle financeiro inteligente com IA</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                    <input type="email" id="login-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="seu@email.com" required>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-medium text-slate-700">Senha</label>
+                        <button type="button" onclick="appState.showScreen('forgot-screen')" class="text-xs text-blue-600 hover:text-blue-800">Esqueceu a senha?</button>
+                    </div>
+                    <input type="password" id="login-password" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Sua senha" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+                    Entrar
+                </button>
+            </form>
+            <div class="mt-6 text-sm text-center text-slate-600">
+                Não tem uma conta? <button type="button" onclick="appState.showScreen('register-screen')" class="text-blue-600 hover:text-blue-800 font-medium">Criar conta</button>
+            </div>
+            <div class="mt-4 text-xs text-center text-slate-400">
+                Teste rápido: user1@teste.com (Senha: 123)
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Cadastro -->
+    <div id="register-screen" class="hidden flex-1 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-slate-800">Criar Conta</h1>
+                <p class="text-sm text-slate-500 mt-1">Junte-se ao FinanIA</p>
+            </div>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+                    <input type="text" id="reg-name" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                    <input type="email" id="reg-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="reg-password" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required minlength="6">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+                    Cadastrar
+                </button>
+            </form>
+            <div class="mt-6 text-sm text-center text-slate-600">
+                Já tem conta? <button type="button" onclick="appState.showScreen('login-screen')" class="text-blue-600 hover:text-blue-800 font-medium">Fazer login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Verificação de E-mail -->
+    <div id="verify-screen" class="hidden flex-1 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md text-center">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Verifique seu E-mail</h1>
+            <p class="text-sm text-slate-600 mb-6">Enviamos um código de confirmação para <strong id="verify-email-display"></strong>.<br><span class="text-xs text-blue-500">(Para este teste, use o código: 1234)</span></p>
+            
+            <form id="verify-form" class="space-y-4">
+                <input type="text" id="verify-code" class="w-full text-center tracking-widest text-2xl px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0000" maxlength="4" required>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+                    Confirmar Código
+                </button>
+            </form>
+            <button type="button" onclick="appState.showScreen('login-screen')" class="mt-4 text-sm text-slate-500 hover:text-slate-700">Voltar para o login</button>
+        </div>
+    </div>
+
+    <!-- Tela de Esqueci a Senha -->
+    <div id="forgot-screen" class="hidden flex-1 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md text-center">
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Recuperar Senha</h1>
+            <p class="text-sm text-slate-600 mb-6">Digite seu e-mail para receber as instruções.</p>
+            <form id="forgot-form" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                    <input type="email" id="forgot-email" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+                    Enviar Código
+                </button>
+            </form>
+            <button type="button" onclick="appState.showScreen('login-screen')" class="mt-4 text-sm text-slate-500 hover:text-slate-700">Voltar</button>
+        </div>
+    </div>
+
+    <!-- Tela de Redefinir Senha -->
+    <div id="reset-screen" class="hidden flex-1 flex items-center justify-center p-4">
+        <div class="glass-card rounded-2xl p-8 w-full max-w-md">
+            <h1 class="text-2xl font-bold text-slate-800 mb-2 text-center">Nova Senha</h1>
+            <p class="text-sm text-slate-600 mb-6 text-center">Digite o código recebido e a nova senha.<br><span class="text-xs text-blue-500">(Código de teste: 1234)</span></p>
+            <form id="reset-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Código de Verificação</label>
+                    <input type="text" id="reset-code" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none tracking-widest text-center" placeholder="0000" maxlength="4" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nova Senha</label>
+                    <input type="password" id="reset-password" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required minlength="6">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+                    Redefinir Senha
+                </button>
+            </form>
+            <button type="button" onclick="appState.showScreen('login-screen')" class="mt-4 w-full text-center text-sm text-slate-500 hover:text-slate-700">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Tela Principal (Dashboard) -->
+    <div id="dashboard-screen" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Navbar -->
+        <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-xl font-bold gradient-text hidden sm:block">FinanIA</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="user-greeting" class="text-sm font-medium text-slate-600"></span>
+                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">Trocar Senha</button>
+                <button onclick="appState.logout()" class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">Sair</button>
+            </div>
+        </nav>
+
+        <!-- Main Content (Scrollable) -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50">
+            <div class="max-w-7xl mx-auto space-y-6">
+                
+                <!-- Cards de Resumo -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                    <div class="glass-card rounded-xl p-5 border-l-4 border-green-500">
+                        <h3 class="text-sm font-medium text-slate-500">Receitas Totais</h3>
+                        <p id="total-income" class="text-2xl font-bold text-slate-800 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-5 border-l-4 border-red-500">
+                        <h3 class="text-sm font-medium text-slate-500">Despesas Totais</h3>
+                        <p id="total-expense" class="text-2xl font-bold text-slate-800 mt-1">R$ 0,00</p>
+                    </div>
+                    <div class="glass-card rounded-xl p-5 border-l-4 border-blue-500" id="balance-card">
+                        <h3 class="text-sm font-medium text-slate-500">Saldo Atual</h3>
+                        <p id="total-balance" class="text-2xl font-bold mt-1">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <!-- Lançamentos e Histórico -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Novo Lançamento -->
+                    <div class="lg:col-span-1 glass-card rounded-xl p-5">
+                        <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Novo Lançamento
+                        </h2>
+                        <form id="transaction-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Tipo</label>
+                                <select id="trans-type" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" onchange="updateCategories()">
+                                    <option value="despesa">Despesa</option>
+                                    <option value="receita">Receita</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
+                                <select id="trans-category" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+                                <input type="text" id="trans-desc" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" placeholder="Ex: Supermercado" required>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Valor (R$)</label>
+                                    <input type="number" id="trans-amount" step="0.01" min="0.01" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" placeholder="0.00" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Data</label>
+                                    <input type="date" id="trans-date" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-blue-500" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 rounded-lg text-sm transition-colors mt-2">
+                                Adicionar
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Lançamentos -->
+                    <div class="lg:col-span-2 glass-card rounded-xl p-5 flex flex-col">
+                        <h2 class="text-lg font-semibold mb-4 text-slate-800 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            Movimentações Recentes
+                        </h2>
+                        <div class="flex-1 overflow-y-auto pr-2 max-h-[300px]">
+                            <ul id="transactions-list" class="space-y-3">
+                                <!-- Preenchido via JS -->
+                            </ul>
+                            <div id="no-transactions" class="text-center text-sm text-slate-400 py-6 hidden">
+                                Nenhuma movimentação registrada.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestão de Faturas de Cartão -->
+                <div class="glass-card rounded-xl p-5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                            Faturas de Cartão (Projeções)
+                        </h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <!-- Adicionar Fatura -->
+                        <div class="md:col-span-1 border-r border-slate-100 pr-0 md:pr-4">
+                            <form id="invoice-form" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Cartão (Ex: Nubank)</label>
+                                    <input type="text" id="inv-card" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Mês de Vencimento</label>
+                                    <input type="month" id="inv-month" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1">Valor (R$)</label>
+                                    <input type="number" id="inv-amount" step="0.01" min="0.01" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-indigo-500" required>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium py-2 rounded-lg text-sm transition-colors border border-indigo-200">
+                                    Adicionar Fatura
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Lista de Faturas -->
+                        <div class="md:col-span-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="invoices-list">
+                                <!-- Preenchido via JS -->
+                            </div>
+                            <div id="no-invoices" class="text-center text-sm text-slate-400 py-6 hidden">
+                                Nenhuma fatura futura projetada.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Painel de IA - Devolutivas Mensais -->
+                <div class="glass-card rounded-xl p-1 ai-gradient border border-blue-100">
+                    <div class="bg-white/60 backdrop-blur-sm rounded-lg p-5 h-full">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                    Consultor Financeiro Inteligente (Gemini AI)
+                                </h2>
+                                <p class="text-sm text-slate-600 mt-1">Análise de excelência, recuperação, fundo de emergência e investimentos.</p>
+                            </div>
+                            <button onclick="appState.generateAIAnalysis()" id="btn-ia" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md transition-all flex items-center gap-2 shrink-0">
+                                <span>Gerar Análise Completa</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <div id="ai-response-container" class="mt-6 border-t border-blue-200/50 pt-6 hidden">
+                            <div id="ai-loader" class="text-center py-8 hidden">
+                                <div class="loader mb-3"></div>
+                                <p class="text-sm text-blue-600 font-medium">Analisando suas finanças, identificando erros e buscando os melhores investimentos...</p>
+                            </div>
+                            <div id="ai-content" class="markdown-body bg-white rounded-lg p-6 shadow-sm border border-slate-100 text-sm">
+                                <!-- Resposta da IA entra aqui -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer Spacing -->
+                <div class="h-8"></div>
+            </div>
+        </main>
+
+        <!-- Modal de Troca de Senha Interna -->
+        <div id="change-pwd-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+                <h3 class="text-lg font-bold text-slate-800 mb-4">Alterar Senha</h3>
+                <form id="change-pwd-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Senha Atual</label>
+                        <input type="password" id="current-pwd" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nova Senha</label>
+                        <input type="password" id="new-pwd" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required minlength="6">
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="document.getElementById('change-pwd-modal').classList.add('hidden')" class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">Cancelar</button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURAÇÕES E ESTADOS GERAIS ---
+        
+        // Simulação de banco de dados e controle de autenticação
+        const db = {
+            users: [
+                { email: 'user1@teste.com', password: '123', name: 'Usuário Teste', verified: true }
+            ],
+            pendingVerifications: {}, // Armazena { email: code }
+            resetCodes: {}, // Armazena { email: code }
+            
+            transactions: [
+                { id: 1, userEmail: 'user1@teste.com', type: 'receita', category: 'Receita', desc: 'Salário', amount: 5000, date: new Date().toISOString().split('T')[0] },
+                { id: 2, userEmail: 'user1@teste.com', type: 'despesa', category: 'Casa', desc: 'Aluguel', amount: 1500, date: new Date().toISOString().split('T')[0] },
+                { id: 3, userEmail: 'user1@teste.com', type: 'despesa', category: 'Alimentação', desc: 'Supermercado', amount: 600, date: new Date().toISOString().split('T')[0] }
+            ],
+            invoices: [
+                { id: 1, userEmail: 'user1@teste.com', card: 'Nubank', month: '2026-05', amount: 850.50 }
+            ]
+        };
+
+        const CATEGORIES = {
+            despesa: ['Casa', 'Educação', 'Transporte', 'Alimentação', 'Cartões de Crédito', 'Viagens', 'Outros'],
+            receita: ['Salário', 'Rendimento', 'Venda', 'Outros']
+        };
+
+        const appState = {
+            currentUser: null,
+            currentEmailContext: null, // Guarda o e-mail durante os processos de verificação e reset
+            
+            init() {
+                // Set default date to today
+                document.getElementById('trans-date').value = new Date().toISOString().split('T')[0];
+                // Set default month to next month for invoices
+                let nextMonth = new Date();
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                document.getElementById('inv-month').value = nextMonth.toISOString().slice(0, 7);
+                
+                updateCategories();
+                this.setupEventListeners();
+            },
+
+            showScreen(screenId) {
+                const screens = ['login-screen', 'register-screen', 'verify-screen', 'forgot-screen', 'reset-screen', 'dashboard-screen'];
+                screens.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        if(id === screenId) el.classList.remove('hidden');
+                        else el.classList.add('hidden');
+                    }
+                });
+            },
+
+            login(email, password) {
+                const user = db.users.find(u => u.email === email && u.password === password);
+                if (user) {
+                    if (!user.verified) {
+                        this.currentEmailContext = email;
+                        db.pendingVerifications[email] = '1234';
+                        document.getElementById('verify-email-display').textContent = email;
+                        this.showScreen('verify-screen');
+                        showToast('Confirme seu e-mail para continuar.', 'info');
+                        return;
+                    }
+                    this.currentUser = user;
+                    this.showScreen('dashboard-screen');
+                    document.getElementById('user-greeting').textContent = `Olá, ${user.name}`;
+                    this.refreshDashboard();
+                    showToast('Login realizado com sucesso!', 'success');
+                } else {
+                    showToast('E-mail ou senha incorretos.', 'error');
+                }
+            },
+
+            register(name, email, password) {
+                if (db.users.find(u => u.email === email)) {
+                    showToast('Este e-mail já está em uso.', 'error');
+                    return;
+                }
+                
+                db.users.push({ email, password, name, verified: false });
+                db.pendingVerifications[email] = '1234'; // Código Simulado
+                this.currentEmailContext = email;
+                
+                document.getElementById('verify-email-display').textContent = email;
+                this.showScreen('verify-screen');
+                showToast('Conta criada! Enviamos um código para seu e-mail.', 'success');
+            },
+
+            verifyEmail(code) {
+                if (db.pendingVerifications[this.currentEmailContext] === code) {
+                    const user = db.users.find(u => u.email === this.currentEmailContext);
+                    if (user) user.verified = true;
+                    delete db.pendingVerifications[this.currentEmailContext];
+                    
+                    showToast('E-mail verificado com sucesso! Faça login.', 'success');
+                    this.showScreen('login-screen');
+                    document.getElementById('login-email').value = this.currentEmailContext;
+                    document.getElementById('login-password').value = '';
+                } else {
+                    showToast('Código inválido.', 'error');
+                }
+            },
+
+            requestPasswordReset(email) {
+                const user = db.users.find(u => u.email === email);
+                if (!user) {
+                    // Por segurança em apps reais, não expomos se o e-mail existe
+                    showToast('Se o e-mail existir, um código foi enviado.', 'info');
+                    this.currentEmailContext = email;
+                    this.showScreen('reset-screen');
+                    return;
+                }
+                db.resetCodes[email] = '1234'; // Código Simulado
+                this.currentEmailContext = email;
+                this.showScreen('reset-screen');
+                showToast('Código de recuperação enviado para o e-mail.', 'info');
+            },
+
+            resetPassword(code, newPassword) {
+                if (db.resetCodes[this.currentEmailContext] === code) {
+                    const user = db.users.find(u => u.email === this.currentEmailContext);
+                    if (user) {
+                        user.password = newPassword;
+                        delete db.resetCodes[this.currentEmailContext];
+                        showToast('Senha redefinida com sucesso!', 'success');
+                        this.showScreen('login-screen');
+                    }
+                } else {
+                    showToast('Código de recuperação inválido.', 'error');
+                }
+            },
+
+            changeInternalPassword(currentPwd, newPwd) {
+                if (this.currentUser.password === currentPwd) {
+                    this.currentUser.password = newPwd;
+                    document.getElementById('change-pwd-modal').classList.add('hidden');
+                    document.getElementById('change-pwd-form').reset();
+                    showToast('Senha alterada com sucesso!', 'success');
+                } else {
+                    showToast('A senha atual está incorreta.', 'error');
+                }
+            },
+
+            logout() {
+                this.currentUser = null;
+                this.currentEmailContext = null;
+                this.showScreen('login-screen');
+                
+                // Limpar todos os formulários e resquícios da tela
+                document.querySelectorAll('form').forEach(f => f.reset());
+                document.getElementById('ai-response-container').classList.add('hidden');
+                document.getElementById('ai-content').innerHTML = '';
+            },
+
+            getUserTransactions() {
+                return db.transactions.filter(t => t.userEmail === this.currentUser.email)
+                                      .sort((a, b) => new Date(b.date) - new Date(a.date));
+            },
+
+            getUserInvoices() {
+                return db.invoices.filter(i => i.userEmail === this.currentUser.email)
+                                  .sort((a, b) => a.month.localeCompare(b.month));
+            },
+
+            addTransaction(type, category, desc, amount, date) {
+                const newTrans = {
+                    id: Date.now(),
+                    userEmail: this.currentUser.email,
+                    type, category, desc, amount: parseFloat(amount), date
+                };
+                db.transactions.push(newTrans);
+                this.refreshDashboard();
+                showToast('Lançamento adicionado.', 'success');
+            },
+
+            deleteTransaction(id) {
+                db.transactions = db.transactions.filter(t => t.id !== id);
+                this.refreshDashboard();
+                showToast('Lançamento removido.', 'info');
+            },
+
+            addInvoice(card, month, amount) {
+                const newInv = {
+                    id: Date.now(),
+                    userEmail: this.currentUser.email,
+                    card, month, amount: parseFloat(amount)
+                };
+                db.invoices.push(newInv);
+                this.refreshDashboard();
+                showToast('Fatura projetada adicionada.', 'success');
+            },
+
+            deleteInvoice(id) {
+                db.transactions = db.transactions.filter(t => t.id !== id);
+                db.invoices = db.invoices.filter(i => i.id !== id);
+                this.refreshDashboard();
+                showToast('Excluído.', 'info');
+            },
+
+            refreshDashboard() {
+                const transactions = this.getUserTransactions();
+                const invoices = this.getUserInvoices();
+                
+                // 1. Atualizar Cards
+                let totalInc = 0;
+                let totalExp = 0;
+                transactions.forEach(t => {
+                    if(t.type === 'receita') totalInc += t.amount;
+                    else totalExp += t.amount;
+                });
+                
+                const balance = totalInc - totalExp;
+
+                document.getElementById('total-income').textContent = formatCurrency(totalInc);
+                document.getElementById('total-expense').textContent = formatCurrency(totalExp);
+                document.getElementById('total-balance').textContent = formatCurrency(balance);
+                
+                const balCard = document.getElementById('balance-card');
+                const balText = document.getElementById('total-balance');
+                if(balance >= 0) {
+                    balText.classList.remove('text-red-600');
+                    balText.classList.add('text-green-600');
+                    balCard.classList.remove('border-red-500');
+                    balCard.classList.add('border-blue-500');
+                } else {
+                    balText.classList.remove('text-green-600');
+                    balText.classList.add('text-red-600');
+                    balCard.classList.remove('border-blue-500');
+                    balCard.classList.add('border-red-500');
+                }
+
+                // 2. Renderizar Lista de Transações
+                const tList = document.getElementById('transactions-list');
+                const noT = document.getElementById('no-transactions');
+                tList.innerHTML = '';
+                
+                if (transactions.length === 0) {
+                    noT.classList.remove('hidden');
+                } else {
+                    noT.classList.add('hidden');
+                    transactions.forEach(t => {
+                        const isInc = t.type === 'receita';
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center p-3 rounded-lg border border-slate-100 bg-white hover:bg-slate-50 transition-colors';
+                        li.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isInc ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        ${isInc ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>'}
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-800">${t.desc}</p>
+                                    <p class="text-xs text-slate-500">${t.category} • ${formatDateBr(t.date)}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm font-bold ${isInc ? 'text-green-600' : 'text-slate-700'}">
+                                    ${isInc ? '+' : '-'} ${formatCurrency(t.amount)}
+                                </span>
+                                <button onclick="appState.deleteTransaction(${t.id})" class="text-slate-400 hover:text-red-500 p-1" title="Excluir">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                        tList.appendChild(li);
+                    });
+                }
+
+                // 3. Renderizar Lista de Faturas
+                const iList = document.getElementById('invoices-list');
+                const noI = document.getElementById('no-invoices');
+                iList.innerHTML = '';
+                
+                if (invoices.length === 0) {
+                    noI.classList.remove('hidden');
+                } else {
+                    noI.classList.add('hidden');
+                    invoices.forEach(i => {
+                        const [year, month] = i.month.split('-');
+                        const div = document.createElement('div');
+                        div.className = 'bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative';
+                        div.innerHTML = `
+                            <button onclick="appState.deleteInvoice(${i.id})" class="absolute top-2 right-2 text-slate-300 hover:text-red-500" title="Excluir">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                            <div class="text-xs font-semibold text-indigo-600 mb-1 uppercase tracking-wider">${month}/${year}</div>
+                            <div class="font-bold text-slate-800">${i.card}</div>
+                            <div class="text-lg font-bold text-slate-700 mt-2">${formatCurrency(i.amount)}</div>
+                        `;
+                        iList.appendChild(div);
+                    });
+                }
+            },
+
+            setupEventListeners() {
+                // === Eventos de Autenticação ===
+                document.getElementById('login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.login(document.getElementById('login-email').value.trim(), document.getElementById('login-password').value);
+                });
+
+                document.getElementById('register-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.register(
+                        document.getElementById('reg-name').value.trim(),
+                        document.getElementById('reg-email').value.trim(),
+                        document.getElementById('reg-password').value
+                    );
+                });
+
+                document.getElementById('verify-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.verifyEmail(document.getElementById('verify-code').value.trim());
+                });
+
+                document.getElementById('forgot-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.requestPasswordReset(document.getElementById('forgot-email').value.trim());
+                });
+
+                document.getElementById('reset-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.resetPassword(
+                        document.getElementById('reset-code').value.trim(),
+                        document.getElementById('reset-password').value
+                    );
+                });
+
+                document.getElementById('change-pwd-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.changeInternalPassword(
+                        document.getElementById('current-pwd').value,
+                        document.getElementById('new-pwd').value
+                    );
+                });
+
+                // === Eventos da Aplicação Interna ===
+                document.getElementById('transaction-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addTransaction(
+                        document.getElementById('trans-type').value,
+                        document.getElementById('trans-category').value,
+                        document.getElementById('trans-desc').value.trim(),
+                        document.getElementById('trans-amount').value,
+                        document.getElementById('trans-date').value
+                    );
+                    document.getElementById('trans-desc').value = '';
+                    document.getElementById('trans-amount').value = '';
+                });
+
+                document.getElementById('invoice-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addInvoice(
+                        document.getElementById('inv-card').value.trim(),
+                        document.getElementById('inv-month').value,
+                        document.getElementById('inv-amount').value
+                    );
+                    document.getElementById('inv-card').value = '';
+                    document.getElementById('inv-amount').value = '';
+                });
+            },
+
+            // INTEGRAÇÃO GEMINI IA
+            async generateAIAnalysis() {
+                const btn = document.getElementById('btn-ia');
+                const container = document.getElementById('ai-response-container');
+                const loader = document.getElementById('ai-loader');
+                const content = document.getElementById('ai-content');
+
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+                container.classList.remove('hidden');
+                loader.classList.remove('hidden');
+                content.innerHTML = '';
+
+                // Preparar dados para o prompt
+                const transactions = this.getUserTransactions();
+                const invoices = this.getUserInvoices();
+                
+                let income = 0;
+                let expensesByCategory = {};
+                
+                transactions.forEach(t => {
+                    if(t.type === 'receita') income += t.amount;
+                    else {
+                        expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + t.amount;
+                    }
+                });
+
+                let futureInvoicesText = invoices.map(i => `${i.card} (${i.month}): ${formatCurrency(i.amount)}`).join('\n') || "Nenhuma fatura futura cadastrada.";
+                let expensesText = Object.entries(expensesByCategory).map(([cat, val]) => `- ${cat}: ${formatCurrency(val)}`).join('\n') || "Nenhuma despesa registrada.";
+
+                const prompt = `
+                    Você é o FinanIA, um consultor financeiro especialista no Brasil.
+                    Analise os dados financeiros do usuário deste mês para fornecer uma devolutiva didática e acionável.
+
+                    DADOS DO USUÁRIO:
+                    - Receitas Totais: ${formatCurrency(income)}
+                    - Despesas por Categoria:
+                    ${expensesText}
+                    - Faturas de Cartão de Crédito Projetadas (Futuro):
+                    ${futureInvoicesText}
+
+                    Com base nisso, forneça um relatório estruturado abordando EXATAMENTE os seguintes pontos:
+                    1. **Caminho da Excelência ou Erros**: Estamos indo bem ou cometendo erros? Seja honesto. Onde especificamente estão os maiores gargalos ou erros baseado nas categorias?
+                    2. **Projeções e Recuperação/Reserva**: Se o saldo (Receitas - Despesas e Faturas atuais) for negativo ou perigoso, crie um plano de recuperação. Se for positivo, trace uma meta simples para criar ou encorpar o Fundo de Reserva de Emergência.
+                    3. **Recomendações de Investimentos Mensais**: Considere o cenário macroeconômico atual do Brasil (Selic) e sugira as melhores classes de investimentos para este momento (ex: Tesouro Selic, CDBs, Fundos Imobiliários). Diga a rentabilidade média esperada e se é um bom momento para trocar de aplicação (mexer em fundos atuais).
+
+                    FORMATAÇÃO DE SAÍDA:
+                    Retorne APENAS conteúdo em HTML usando tags semânticas (<h3>, <p>, <ul>, <li>, <strong>) para que eu possa renderizar diretamente em uma div. NÃO use markdown delimitado por crases (\`\`\`html). Crie algo bonito de ler.
+                `;
+
+                try {
+                    const aiResponse = await fetchGeminiWithRetry(prompt);
+                    // Format output (strip markdown blocks if AI ignored instructions)
+                    let cleanHTML = aiResponse.replace(/```html/g, '').replace(/```/g, '').trim();
+                    content.innerHTML = cleanHTML;
+                } catch (error) {
+                    content.innerHTML = `
+                        <div class="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">
+                            <strong>Ops!</strong> Não foi possível gerar a análise no momento. Tente novamente mais tarde.
+                            <br><small class="text-red-500">${error.message}</small>
+                        </div>
+                    `;
+                } finally {
+                    loader.classList.add('hidden');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                }
+            }
+        };
+
+        // --- FUNÇÕES UTILITÁRIAS ---
+
+        function updateCategories() {
+            const type = document.getElementById('trans-type').value;
+            const select = document.getElementById('trans-category');
+            select.innerHTML = '';
+            CATEGORIES[type].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                select.appendChild(opt);
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+
+        function formatDateBr(dateString) {
+            const [y, m, d] = dateString.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-white border-slate-200 text-slate-800';
+            let icon = `<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            
+            if(type === 'success') {
+                bgClass = 'bg-green-50 border-green-200 text-green-800';
+                icon = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else if (type === 'error') {
+                bgClass = 'bg-red-50 border-red-200 text-red-800';
+                icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            }
+
+            toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg border transform transition-all duration-300 translate-x-full ${bgClass}`;
+            toast.innerHTML = `${icon} <span class="text-sm font-medium">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full');
+            });
+
+            // Remove after 3s
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- GEMINI API INTEGRAÇÃO (COM EXPONENTIAL BACKOFF) ---
+        
+        async function fetchGeminiWithRetry(prompt, retries = 5) {
+            const apiKey = ""; // API Key fornecida pelo ambiente em tempo de execução
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { 
+                    parts: [{ text: "Você é um analista financeiro. Responda estritamente usando tags HTML, sem backticks ou formatação Markdown." }] 
+                }
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        const errData = await response.json().catch(()=>({}));
+                        throw new Error(errData.error?.message || `HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    if (!data.candidates || data.candidates.length === 0) {
+                        throw new Error("Sem resposta da IA");
+                    }
+                    return data.candidates[0].content.parts[0].text;
+
+                } catch (err) {
+                    if (i === retries - 1) {
+                        console.error("Gemini API falhou após", retries, "tentativas.", err);
+                        throw err;
+                    }
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            appState.init();
+        });
+
+    </script>
+</body>
+</html>
