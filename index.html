@@ -31,6 +31,37 @@
         /* Full Screen Initial Loader */
         #app-loader { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
+
+    <!-- CONFIGURAÇÃO DA INTEGRAÇÃO DO GOOGLE DRIVE API -->
+    <script>
+        // ATENÇÃO: COLOQUE AQUI AS SUAS CREDENCIAIS DO GOOGLE CLOUD
+        window.DRIVE_CLIENT_ID = ''; // Exemplo: '123456789-abcde.apps.googleusercontent.com'
+        window.DRIVE_API_KEY = ''; // Exemplo: 'AIzaSyA...'
+        window.tokenClient = null;
+
+        window.gapiLoaded = function() {
+            if (window.DRIVE_API_KEY) {
+                gapi.load('client', async () => {
+                    await gapi.client.init({
+                        apiKey: window.DRIVE_API_KEY,
+                        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+                    }).catch(err => console.error('Erro na inicialização da Drive API:', err));
+                });
+            }
+        };
+
+        window.gisLoaded = function() {
+            if (window.DRIVE_CLIENT_ID) {
+                window.tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: window.DRIVE_CLIENT_ID,
+                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    callback: '' // Será configurado de forma assíncrona quando clicado
+                });
+            }
+        };
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="window.gisLoaded()"></script>
+    <script src="https://apis.google.com/js/api.js" async defer onload="window.gapiLoaded()"></script>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
@@ -40,7 +71,7 @@
         <h2 class="text-xl font-bold text-slate-800">FinanIA</h2>
         <p class="text-sm text-slate-500 mt-2 flex items-center gap-2">
             <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
-            Sincronizando com a nuvem...
+            Iniciando o sistema...
         </p>
     </div>
 
@@ -56,7 +87,7 @@
                     <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <h1 class="text-3xl font-bold gradient-text">FinanIA</h1>
-                <p class="text-sm text-slate-500 mt-2">Controle financeiro inteligente na Nuvem</p>
+                <p class="text-sm text-slate-500 mt-2">Controle financeiro inteligente</p>
             </div>
             
             <form id="login-form" class="space-y-4">
@@ -177,18 +208,41 @@
     <!-- Tela Principal (Dashboard) -->
     <div id="dashboard-screen" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
         <!-- Navbar -->
-        <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
+        <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0 flex-wrap gap-4">
             <div class="flex items-center gap-2">
                 <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span class="text-xl font-bold gradient-text hidden sm:block">FinanIA</span>
-                <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 flex items-center gap-1 hidden md:flex">
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Compartilhado
+                <span id="cloud-indicator" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 flex items-center gap-1 hidden md:flex">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Firebase Cloud
                 </span>
             </div>
             <div class="flex items-center gap-4">
-                <span id="user-greeting" class="text-sm font-medium text-slate-600"></span>
-                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors hidden sm:block">Trocar Senha</button>
-                <button onclick="appState.logout()" class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">Sair</button>
+                <span id="user-greeting" class="text-sm font-medium text-slate-600 hidden lg:block"></span>
+                
+                <!-- Botões de Integração Google Drive -->
+                <button onclick="appState.saveToDrive()" class="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors flex items-center gap-1" title="Guardar diretamente no Google Drive">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <span class="hidden sm:inline">Salvar no Drive</span>
+                </button>
+                <button onclick="appState.loadFromDrive()" class="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors flex items-center gap-1 border-r border-slate-200 pr-4" title="Carregar do Google Drive">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                    <span class="hidden sm:inline">Ler do Drive</span>
+                </button>
+
+                <!-- Botões de Integração Local (Ficheiro) Backup -->
+                <button onclick="appState.exportBackup()" class="text-sm text-slate-600 hover:text-blue-600 font-medium transition-colors flex items-center gap-1" title="Exportar ficheiro de backup">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span class="hidden xl:inline">Exportar Local</span>
+                </button>
+                
+                <label class="text-sm text-slate-600 hover:text-blue-600 font-medium transition-colors cursor-pointer flex items-center gap-1" title="Importar ficheiro de backup">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span class="hidden xl:inline">Importar Local</span>
+                    <input type="file" accept=".json" class="hidden" onchange="appState.importBackup(event)">
+                </label>
+
+                <button onclick="document.getElementById('change-pwd-modal').classList.remove('hidden')" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors hidden lg:block border-l border-slate-200 pl-4">Trocar Senha</button>
+                <button onclick="appState.logout()" class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors border-l border-slate-200 pl-4">Sair</button>
             </div>
         </nav>
 
@@ -393,7 +447,7 @@
             fsDb = getFirestore(app);
         }
 
-        // Base de Dados Local (Atualizada automaticamente pelo Firebase - agora compartilhada)
+        // Base de Dados (Atualizada automaticamente pelo Firebase ou via Local Storage)
         const db = {
             users: [],
             transactions: [],
@@ -410,7 +464,7 @@
         const appState = {
             currentUser: null,
             currentEmailContext: null, 
-            listeners: [], // Para limpar onSnapshots se necessário
+            listeners: [],
             
             init() {
                 document.getElementById('trans-date').value = new Date().toISOString().split('T')[0];
@@ -421,24 +475,23 @@
                 window.updateCategories();
                 this.setupEventListeners();
 
-                // Autenticação Silenciosa Inicial do Firebase Cloud
-                if (auth) {
+                // Tenta conectar na Nuvem do Firebase se existir
+                if (auth && firebaseConfig) {
                     const initAuth = async () => {
                         try {
                             if (initToken) await signInWithCustomToken(auth, initToken);
                             else await signInAnonymously(auth);
                         } catch(e) {
                             console.error("Erro no Auth", e);
-                            document.getElementById('app-loader').style.display = 'none';
+                            this.initLocalFallback();
                         }
                     };
 
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
-                            envUserId = user.uid; // Mantemos o envUserId apenas como garantia de sessão logada para permitir os inserts
+                            envUserId = user.uid; 
                             isCloudReady = true;
                             this.setupCloudListeners();
-                            // Esconde o loader quando Firebase carrega
                             setTimeout(() => { document.getElementById('app-loader').style.display = 'none'; this.showScreen('login-screen'); }, 800);
                         } else {
                             envUserId = null;
@@ -447,25 +500,233 @@
 
                     initAuth();
                 } else {
-                    // Sem config do firebase (Local)
-                    document.getElementById('app-loader').style.display = 'none';
-                    this.showScreen('login-screen');
-                    showToast('Modo de demonstração sem nuvem.', 'info');
+                    // Sem config do Firebase (Ex: Github Pages) -> Ativa o LocalStorage
+                    this.initLocalFallback();
                 }
+            },
+
+            initLocalFallback() {
+                isCloudReady = false;
+                // Carrega dados salvos no navegador
+                const savedData = localStorage.getItem('finania_backup');
+                if (savedData) {
+                    try {
+                        const parsed = JSON.parse(savedData);
+                        db.users = parsed.users || [];
+                        db.transactions = parsed.transactions || [];
+                        db.invoices = parsed.invoices || [];
+                    } catch(e) {
+                        console.error("Erro lendo Local Storage", e);
+                    }
+                }
+
+                // Ajusta o Indicador na tela para Local
+                const cloudInd = document.getElementById('cloud-indicator');
+                if(cloudInd) {
+                    cloudInd.innerHTML = '<span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Salvo Localmente';
+                    cloudInd.className = 'bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 flex items-center gap-1 hidden md:flex';
+                }
+
+                document.getElementById('app-loader').style.display = 'none';
+                this.showScreen('login-screen');
+            },
+
+            // Função responsável por persistir no Cache do Navegador quando não há Firebase
+            saveLocal() {
+                if (!isCloudReady) {
+                    const dataToSave = {
+                        users: db.users,
+                        transactions: db.transactions,
+                        invoices: db.invoices
+                    };
+                    localStorage.setItem('finania_backup', JSON.stringify(dataToSave));
+                }
+            },
+
+            // ----------------------------------------------------
+            // MÉTODOS GOOGLE DRIVE API (NOVO)
+            // ----------------------------------------------------
+            saveToDrive() {
+                if (!window.DRIVE_CLIENT_ID || !window.DRIVE_API_KEY) {
+                    window.showToast('Por favor, configure as suas credenciais Google Cloud no código da aplicação primeiro.', 'error');
+                    return;
+                }
+                window.tokenClient.callback = async (resp) => {
+                    if (resp.error !== undefined) {
+                        window.showToast('Erro ao autorizar a conta Google.', 'error');
+                        return;
+                    }
+                    await this.performDriveSave();
+                };
+                // Exige login do utilizador no Google
+                if (gapi.client.getToken() === null) {
+                    window.tokenClient.requestAccessToken({prompt: 'consent'});
+                } else {
+                    window.tokenClient.requestAccessToken({prompt: ''});
+                }
+            },
+
+            async performDriveSave() {
+                window.showToast('A enviar backup para o Google Drive...', 'info');
+                try {
+                    const fileContent = JSON.stringify({
+                        users: db.users,
+                        transactions: db.transactions,
+                        invoices: db.invoices
+                    });
+                    
+                    // Verifica se já existe um ficheiro antigo para sobrescrever
+                    let response = await gapi.client.drive.files.list({
+                        q: "name='finania_backup.json' and trashed=false",
+                        spaces: 'drive',
+                        fields: 'files(id, name)'
+                    });
+                    
+                    let files = response.result.files;
+                    let fileId;
+                    
+                    if (files && files.length > 0) {
+                        fileId = files[0].id;
+                    } else {
+                        // Cria um novo se não existir
+                        let createRes = await gapi.client.drive.files.create({
+                            resource: { name: 'finania_backup.json', mimeType: 'application/json' }
+                        });
+                        fileId = createRes.result.id;
+                    }
+                    
+                    // Envia os dados para esse ficheiro
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${gapi.client.getToken().access_token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: fileContent
+                    });
+                    
+                    window.showToast('Dados guardados com sucesso no Google Drive! ☁️', 'success');
+                } catch (error) {
+                    console.error(error);
+                    window.showToast('Ocorreu um erro ao guardar no Google Drive.', 'error');
+                }
+            },
+
+            loadFromDrive() {
+                if (!window.DRIVE_CLIENT_ID || !window.DRIVE_API_KEY) {
+                    window.showToast('Por favor, configure as suas credenciais Google Cloud no código da aplicação primeiro.', 'error');
+                    return;
+                }
+                window.tokenClient.callback = async (resp) => {
+                    if (resp.error !== undefined) {
+                        window.showToast('Erro ao autorizar a conta Google.', 'error');
+                        return;
+                    }
+                    await this.performDriveLoad();
+                };
+                if (gapi.client.getToken() === null) {
+                    window.tokenClient.requestAccessToken({prompt: 'consent'});
+                } else {
+                    window.tokenClient.requestAccessToken({prompt: ''});
+                }
+            },
+
+            async performDriveLoad() {
+                window.showToast('A procurar o seu ficheiro no Google Drive...', 'info');
+                try {
+                    let response = await gapi.client.drive.files.list({
+                        q: "name='finania_backup.json' and trashed=false",
+                        spaces: 'drive',
+                        fields: 'files(id, name)'
+                    });
+                    
+                    let files = response.result.files;
+                    if (files && files.length > 0) {
+                        let fileId = files[0].id;
+                        let fileResponse = await gapi.client.drive.files.get({
+                            fileId: fileId,
+                            alt: 'media' // Pede para descarregar o conteúdo
+                        });
+                        
+                        const importedData = fileResponse.result;
+                        if (importedData.users && importedData.transactions && importedData.invoices) {
+                            db.users = importedData.users;
+                            db.transactions = importedData.transactions;
+                            db.invoices = importedData.invoices;
+                            
+                            this.saveLocal();
+                            if (this.currentUser) this.refreshDashboard();
+                            else window.showToast('Backup restaurado do Google Drive com sucesso! ☁️', 'success');
+                        } else {
+                            window.showToast('O ficheiro encontrado no Google Drive está inválido ou corrompido.', 'error');
+                        }
+                    } else {
+                        window.showToast('Não foi encontrado nenhum backup com o nome "finania_backup.json".', 'error');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    window.showToast('Erro ao tentar ler ficheiro do Google Drive.', 'error');
+                }
+            },
+            // ----------------------------------------------------
+
+            // Gerar Arquivo Json (Para download Manual)
+            exportBackup() {
+                const dataStr = JSON.stringify({
+                    users: db.users,
+                    transactions: db.transactions,
+                    invoices: db.invoices
+                }, null, 2);
+                
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                const exportFileDefaultName = `finania_backup_${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                window.showToast('Backup manual descarregado com sucesso!', 'success');
+            },
+
+            // Importar Arquivo Json (De ficheiro local manual)
+            importBackup(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (importedData.users && importedData.transactions && importedData.invoices) {
+                            db.users = importedData.users;
+                            db.transactions = importedData.transactions;
+                            db.invoices = importedData.invoices;
+                            
+                            this.saveLocal();
+                            
+                            if (this.currentUser) this.refreshDashboard();
+                            else window.showToast('Backup restaurado no sistema com sucesso!', 'success');
+                            
+                        } else {
+                            window.showToast('Arquivo de backup inválido ou corrompido.', 'error');
+                        }
+                    } catch (error) {
+                        window.showToast('Erro ao ler o arquivo. Tem certeza que é um .json?', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = ''; // reseta o input para permitir importar o mesmo arquivo se quiser
             },
 
             setupCloudListeners() {
                 if(!envUserId) return;
                 
-                // Agora as consultas ouvem a coleção PÚBLICA (Shared Data), para que todos os usuários vejam tudo sincronizado
-                
-                // 1. Ouve Utilizadores App (Compartilhado)
                 const unsubUsers = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'app_users'), 
                     (snapshot) => { db.users = snapshot.docs.map(d => ({...d.data(), id: d.id})); }, 
                     (err) => console.error("Erro users", err)
                 );
 
-                // 2. Ouve Transações (Compartilhadas)
                 const unsubTrans = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'transactions'), 
                     (snapshot) => { 
                         db.transactions = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
@@ -474,7 +735,6 @@
                     (err) => console.error("Erro transactions", err)
                 );
 
-                // 3. Ouve Faturas (Compartilhadas)
                 const unsubInv = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'invoices'), 
                     (snapshot) => { 
                         db.invoices = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
@@ -503,7 +763,6 @@
                     if (!user.verified) {
                         this.currentEmailContext = email;
                         
-                        // Gera um novo código para re-envio simulado
                         const code = Math.floor(1000 + Math.random() * 9000).toString();
                         db.pendingVerifications[email] = code;
                         
@@ -519,17 +778,17 @@
                     this.showScreen('dashboard-screen');
                     document.getElementById('user-greeting').textContent = `Olá, ${user.name}`;
                     this.refreshDashboard();
-                    showToast('Login realizado com sucesso!', 'success');
+                    window.showToast('Login realizado com sucesso!', 'success');
                     
                     this.checkWhatsAppAlerts();
                 } else {
-                    showToast('E-mail ou senha incorretos.', 'error');
+                    window.showToast('E-mail ou senha incorretos.', 'error');
                 }
             },
 
             async register(name, email, phone, password) {
                 if (db.users.find(u => u.email === email)) {
-                    showToast('Este e-mail já está em uso.', 'error');
+                    window.showToast('Este e-mail já está em uso.', 'error');
                     return;
                 }
                 
@@ -539,18 +798,17 @@
                     await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'app_users'), newUser);
                 } else {
                     db.users.push({...newUser, id: Date.now().toString()});
+                    this.saveLocal();
                 }
                 
-                // Gera código dinâmico simulando sistema real
                 const code = Math.floor(1000 + Math.random() * 9000).toString();
                 db.pendingVerifications[email] = code;
                 this.currentEmailContext = email;
                 
                 document.getElementById('verify-email-display').textContent = email;
                 this.showScreen('verify-screen');
-                showToast('Conta criada! Enviando e-mail de confirmação...', 'info');
+                window.showToast('Conta criada! Enviando e-mail de confirmação...', 'info');
                 
-                // Simula entrega do e-mail na tela do usuário
                 setTimeout(() => {
                     window.showToast(`<strong>📧 E-mail Recebido:</strong><br>Seu código de verificação é: <strong>${code}</strong>`, 'email');
                 }, 2000);
@@ -564,23 +822,24 @@
                             await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', user.id), { verified: true });
                         } else {
                             user.verified = true;
+                            this.saveLocal();
                         }
                     }
                     delete db.pendingVerifications[this.currentEmailContext];
                     
-                    showToast('E-mail verificado! Faça login.', 'success');
+                    window.showToast('E-mail verificado! Faça login.', 'success');
                     this.showScreen('login-screen');
                     document.getElementById('login-email').value = this.currentEmailContext;
                     document.getElementById('login-password').value = '';
                 } else {
-                    showToast('Código de verificação incorreto.', 'error');
+                    window.showToast('Código de verificação incorreto.', 'error');
                 }
             },
 
             requestPasswordReset(email) {
                 const user = db.users.find(u => u.email === email);
                 if (!user) {
-                    showToast('Se o e-mail existir, um código foi enviado.', 'info');
+                    window.showToast('Se o e-mail existir, um código foi enviado.', 'info');
                     this.currentEmailContext = email;
                     this.showScreen('reset-screen');
                     return;
@@ -591,9 +850,8 @@
                 this.currentEmailContext = email;
                 
                 this.showScreen('reset-screen');
-                showToast('Enviando código de recuperação...', 'info');
+                window.showToast('Enviando código de recuperação...', 'info');
                 
-                // Simula entrega do e-mail na tela do usuário
                 setTimeout(() => {
                     window.showToast(`<strong>📧 E-mail Recebido:</strong><br>Seu código de recuperação é: <strong>${code}</strong>`, 'email');
                 }, 2000);
@@ -607,13 +865,14 @@
                             await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', user.id), { password: newPassword });
                         } else {
                             user.password = newPassword;
+                            this.saveLocal();
                         }
                         delete db.resetCodes[this.currentEmailContext];
-                        showToast('Senha redefinida com sucesso!', 'success');
+                        window.showToast('Senha redefinida com sucesso!', 'success');
                         this.showScreen('login-screen');
                     }
                 } else {
-                    showToast('Código inválido.', 'error');
+                    window.showToast('Código inválido.', 'error');
                 }
             },
 
@@ -623,12 +882,13 @@
                         await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', this.currentUser.id), { password: newPwd });
                     } else {
                         this.currentUser.password = newPwd;
+                        this.saveLocal();
                     }
                     document.getElementById('change-pwd-modal').classList.add('hidden');
                     document.getElementById('change-pwd-form').reset();
-                    showToast('Senha alterada com sucesso!', 'success');
+                    window.showToast('Senha alterada com sucesso!', 'success');
                 } else {
-                    showToast('A senha atual está incorreta.', 'error');
+                    window.showToast('A senha atual está incorreta.', 'error');
                 }
             },
 
@@ -642,26 +902,24 @@
             },
 
             getUserTransactions() {
-                // Sem filtro de e-mail agora: retorna as transações de todos os utilizadores da família/equipa
                 return db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
             },
 
             getUserInvoices() {
-                // Sem filtro de e-mail agora: retorna as faturas de todos os utilizadores da família/equipa
                 return db.invoices.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
             },
 
             async addTransaction(type, category, desc, amount, date) {
-                // Guardamos o userEmail para saber quem lançou caso necessário futuramente, mas é público
                 const newTrans = { userEmail: this.currentUser.email, type, category, desc, amount: parseFloat(amount), date, paid: false };
                 
                 if(isCloudReady) {
                     await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'transactions'), newTrans);
                 } else {
                     db.transactions.push({...newTrans, id: Date.now().toString()});
+                    this.saveLocal();
                     this.refreshDashboard();
                 }
-                showToast('Lançamento adicionado.', 'success');
+                window.showToast('Lançamento adicionado.', 'success');
             },
 
             async deleteTransaction(id) {
@@ -669,9 +927,10 @@
                     await deleteDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'transactions', id));
                 } else {
                     db.transactions = db.transactions.filter(t => t.id !== id);
+                    this.saveLocal();
                     this.refreshDashboard();
                 }
-                showToast('Lançamento removido.', 'info');
+                window.showToast('Lançamento removido.', 'info');
             },
             
             async toggleTransactionPaid(id) {
@@ -682,6 +941,7 @@
                         await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'transactions', id), { paid: newStatus });
                     } else {
                         trans.paid = newStatus;
+                        this.saveLocal();
                         this.refreshDashboard();
                     }
                     if(newStatus) window.showToast(`Lançamento sinalizado como pago!`, 'success');
@@ -695,9 +955,10 @@
                     await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'invoices'), newInv);
                 } else {
                     db.invoices.push({...newInv, id: Date.now().toString()});
+                    this.saveLocal();
                     this.refreshDashboard();
                 }
-                showToast('Fatura projetada adicionada.', 'success');
+                window.showToast('Fatura projetada adicionada.', 'success');
             },
 
             async deleteInvoice(id) {
@@ -705,9 +966,10 @@
                     await deleteDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'invoices', id));
                 } else {
                     db.invoices = db.invoices.filter(i => i.id !== id);
+                    this.saveLocal();
                     this.refreshDashboard();
                 }
-                showToast('Fatura excluída.', 'info');
+                window.showToast('Fatura excluída.', 'info');
             },
 
             async toggleInvoicePaid(id) {
@@ -718,6 +980,7 @@
                         await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'invoices', id), { paid: newStatus });
                     } else {
                         invoice.paid = newStatus;
+                        this.saveLocal();
                         this.refreshDashboard();
                     }
                     if(newStatus) window.showToast(`Baixa realizada no cartão ${invoice.card}!`, 'success');
@@ -997,7 +1260,7 @@
                 icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; 
             } else if (type === 'whatsapp') { 
                 bgClass = 'bg-[#dcf8c6] border-[#25D366] text-slate-800 shadow-lg'; 
-                icon = `<svg class="w-6 h-6 text-[#128C7E] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`; 
+                icon = `<svg class="w-6 h-6 text-[#128C7E] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
             } else if (type === 'email') {
                 bgClass = 'bg-yellow-50 border-yellow-300 text-slate-800 shadow-lg';
                 icon = `<svg class="w-6 h-6 text-yellow-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`;
