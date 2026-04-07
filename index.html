@@ -650,7 +650,7 @@
             },
 
             async addTransaction(type, category, desc, amount, date) {
-                const newTrans = { userEmail: this.currentUser.email, type, category, desc, amount: parseFloat(amount), date };
+                const newTrans = { userEmail: this.currentUser.email, type, category, desc, amount: parseFloat(amount), date, paid: false };
                 
                 if(isCloudReady) {
                     await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions'), newTrans);
@@ -669,6 +669,20 @@
                     this.refreshDashboard();
                 }
                 showToast('Lançamento removido.', 'info');
+            },
+            
+            async toggleTransactionPaid(id) {
+                const trans = db.transactions.find(t => t.id === id);
+                if(trans) {
+                    const newStatus = !trans.paid;
+                    if(isCloudReady) {
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions', id), { paid: newStatus });
+                    } else {
+                        trans.paid = newStatus;
+                        this.refreshDashboard();
+                    }
+                    if(newStatus) window.showToast(`Lançamento sinalizado como pago!`, 'success');
+                }
             },
 
             async addInvoice(card, dueDate, amount) {
@@ -703,7 +717,7 @@
                         invoice.paid = newStatus;
                         this.refreshDashboard();
                     }
-                    if(newStatus) showToast(`Baixa realizada no cartão ${invoice.card}!`, 'success');
+                    if(newStatus) window.showToast(`Baixa realizada no cartão ${invoice.card}!`, 'success');
                 }
             },
 
@@ -769,22 +783,24 @@
                     noT.classList.add('hidden');
                     transactions.forEach(t => {
                         const isInc = t.type === 'receita';
+                        const isPaid = !!t.paid;
                         const li = document.createElement('li');
-                        li.className = 'flex justify-between items-center p-3 rounded-lg border border-slate-100 bg-white hover:bg-slate-50 transition-colors';
+                        li.className = `flex justify-between items-center p-3 rounded-lg border ${isPaid ? 'border-green-200 bg-green-50/30' : 'border-slate-100 bg-white'} hover:bg-slate-50 transition-colors`;
                         li.innerHTML = `
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isInc ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} shrink-0">
+                                <input type="checkbox" class="w-4 h-4 text-green-600 rounded border-slate-300 focus:ring-green-500 cursor-pointer mt-0.5" ${isPaid ? 'checked' : ''} onchange="appState.toggleTransactionPaid('${t.id}')" title="Marcar como pago/recebido">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center ${isInc ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} shrink-0 ${isPaid ? 'opacity-50' : ''}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         ${isInc ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>'}
                                     </svg>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-semibold text-slate-800">${t.desc}</p>
+                                    <p class="text-sm font-semibold ${isPaid ? 'text-slate-400 line-through' : 'text-slate-800'}">${t.desc}</p>
                                     <p class="text-xs text-slate-500">${t.category} • ${window.formatDateBr(t.date)}</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
-                                <span class="text-sm font-bold ${isInc ? 'text-green-600' : 'text-slate-700'}">
+                                <span class="text-sm font-bold ${isInc ? 'text-green-600' : 'text-slate-700'} ${isPaid && !isInc ? 'text-slate-400 line-through' : ''} ${isPaid && isInc ? 'opacity-50' : ''}">
                                     ${isInc ? '+' : '-'} ${window.formatCurrency(t.amount)}
                                 </span>
                                 <button onclick="appState.deleteTransaction('${t.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Excluir">
