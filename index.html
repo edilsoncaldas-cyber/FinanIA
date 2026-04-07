@@ -182,7 +182,7 @@
                 <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span class="text-xl font-bold gradient-text hidden sm:block">FinanIA</span>
                 <span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-2 flex items-center gap-1 hidden md:flex">
-                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Nuvem
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Compartilhado
                 </span>
             </div>
             <div class="flex items-center gap-4">
@@ -393,7 +393,7 @@
             fsDb = getFirestore(app);
         }
 
-        // Base de Dados Local (Atualizada automaticamente pelo Firebase)
+        // Base de Dados Local (Atualizada automaticamente pelo Firebase - agora compartilhada)
         const db = {
             users: [],
             transactions: [],
@@ -435,7 +435,7 @@
 
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
-                            envUserId = user.uid;
+                            envUserId = user.uid; // Mantemos o envUserId apenas como garantia de sessão logada para permitir os inserts
                             isCloudReady = true;
                             this.setupCloudListeners();
                             // Esconde o loader quando Firebase carrega
@@ -457,14 +457,16 @@
             setupCloudListeners() {
                 if(!envUserId) return;
                 
-                // 1. Ouve Utilizadores App
-                const unsubUsers = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users'), 
+                // Agora as consultas ouvem a coleção PÚBLICA (Shared Data), para que todos os usuários vejam tudo sincronizado
+                
+                // 1. Ouve Utilizadores App (Compartilhado)
+                const unsubUsers = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'app_users'), 
                     (snapshot) => { db.users = snapshot.docs.map(d => ({...d.data(), id: d.id})); }, 
                     (err) => console.error("Erro users", err)
                 );
 
-                // 2. Ouve Transações
-                const unsubTrans = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions'), 
+                // 2. Ouve Transações (Compartilhadas)
+                const unsubTrans = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'transactions'), 
                     (snapshot) => { 
                         db.transactions = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
                         if(this.currentUser) this.refreshDashboard();
@@ -472,8 +474,8 @@
                     (err) => console.error("Erro transactions", err)
                 );
 
-                // 3. Ouve Faturas
-                const unsubInv = onSnapshot(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices'), 
+                // 3. Ouve Faturas (Compartilhadas)
+                const unsubInv = onSnapshot(collection(fsDb, 'artifacts', appId, 'public', 'data', 'invoices'), 
                     (snapshot) => { 
                         db.invoices = snapshot.docs.map(d => ({...d.data(), id: d.id})); 
                         if(this.currentUser) this.refreshDashboard();
@@ -534,7 +536,7 @@
                 const newUser = { email, phone, password, name, verified: false };
                 
                 if(isCloudReady) {
-                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users'), newUser);
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'app_users'), newUser);
                 } else {
                     db.users.push({...newUser, id: Date.now().toString()});
                 }
@@ -559,7 +561,7 @@
                     const user = db.users.find(u => u.email === this.currentEmailContext);
                     if (user) {
                         if(isCloudReady) {
-                            await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', user.id), { verified: true });
+                            await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', user.id), { verified: true });
                         } else {
                             user.verified = true;
                         }
@@ -602,7 +604,7 @@
                     const user = db.users.find(u => u.email === this.currentEmailContext);
                     if (user) {
                         if(isCloudReady) {
-                            await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', user.id), { password: newPassword });
+                            await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', user.id), { password: newPassword });
                         } else {
                             user.password = newPassword;
                         }
@@ -618,7 +620,7 @@
             async changeInternalPassword(currentPwd, newPwd) {
                 if (this.currentUser.password === currentPwd) {
                     if(isCloudReady) {
-                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'app_users', this.currentUser.id), { password: newPwd });
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'app_users', this.currentUser.id), { password: newPwd });
                     } else {
                         this.currentUser.password = newPwd;
                     }
@@ -640,20 +642,21 @@
             },
 
             getUserTransactions() {
-                return db.transactions.filter(t => t.userEmail === this.currentUser.email)
-                                      .sort((a, b) => new Date(b.date) - new Date(a.date));
+                // Sem filtro de e-mail agora: retorna as transações de todos os utilizadores da família/equipa
+                return db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
             },
 
             getUserInvoices() {
-                return db.invoices.filter(i => i.userEmail === this.currentUser.email)
-                                  .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+                // Sem filtro de e-mail agora: retorna as faturas de todos os utilizadores da família/equipa
+                return db.invoices.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
             },
 
             async addTransaction(type, category, desc, amount, date) {
+                // Guardamos o userEmail para saber quem lançou caso necessário futuramente, mas é público
                 const newTrans = { userEmail: this.currentUser.email, type, category, desc, amount: parseFloat(amount), date, paid: false };
                 
                 if(isCloudReady) {
-                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions'), newTrans);
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'transactions'), newTrans);
                 } else {
                     db.transactions.push({...newTrans, id: Date.now().toString()});
                     this.refreshDashboard();
@@ -663,7 +666,7 @@
 
             async deleteTransaction(id) {
                 if(isCloudReady) {
-                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions', id));
+                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'transactions', id));
                 } else {
                     db.transactions = db.transactions.filter(t => t.id !== id);
                     this.refreshDashboard();
@@ -676,7 +679,7 @@
                 if(trans) {
                     const newStatus = !trans.paid;
                     if(isCloudReady) {
-                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'transactions', id), { paid: newStatus });
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'transactions', id), { paid: newStatus });
                     } else {
                         trans.paid = newStatus;
                         this.refreshDashboard();
@@ -689,7 +692,7 @@
                 const newInv = { userEmail: this.currentUser.email, card, dueDate, amount: parseFloat(amount), paid: false };
                 
                 if(isCloudReady) {
-                    await addDoc(collection(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices'), newInv);
+                    await addDoc(collection(fsDb, 'artifacts', appId, 'public', 'data', 'invoices'), newInv);
                 } else {
                     db.invoices.push({...newInv, id: Date.now().toString()});
                     this.refreshDashboard();
@@ -699,7 +702,7 @@
 
             async deleteInvoice(id) {
                 if(isCloudReady) {
-                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices', id));
+                    await deleteDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'invoices', id));
                 } else {
                     db.invoices = db.invoices.filter(i => i.id !== id);
                     this.refreshDashboard();
@@ -712,7 +715,7 @@
                 if(invoice) {
                     const newStatus = !invoice.paid;
                     if(isCloudReady) {
-                        await updateDoc(doc(fsDb, 'artifacts', appId, 'users', envUserId, 'invoices', id), { paid: newStatus });
+                        await updateDoc(doc(fsDb, 'artifacts', appId, 'public', 'data', 'invoices', id), { paid: newStatus });
                     } else {
                         invoice.paid = newStatus;
                         this.refreshDashboard();
