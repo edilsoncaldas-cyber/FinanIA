@@ -122,7 +122,7 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             </div>
             <h1 class="text-2xl font-bold text-slate-800 mb-2">Verifique seu E-mail</h1>
-            <p class="text-sm text-slate-600 mb-6">Enviamos um código de confirmação para <strong id="verify-email-display"></strong>.<br><span class="text-xs text-blue-500">(Para este teste, use o código: 1234)</span></p>
+            <p class="text-sm text-slate-600 mb-6">Enviamos um código de confirmação para <strong id="verify-email-display"></strong>.</p>
             
             <form id="verify-form" class="space-y-4">
                 <input type="text" id="verify-code" class="w-full text-center tracking-widest text-2xl px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0000" maxlength="4" required>
@@ -156,7 +156,7 @@
     <div id="reset-screen" class="hidden flex-1 flex items-center justify-center p-4">
         <div class="glass-card rounded-2xl p-8 w-full max-w-md">
             <h1 class="text-2xl font-bold text-slate-800 mb-2 text-center">Nova Senha</h1>
-            <p class="text-sm text-slate-600 mb-6 text-center">Digite o código recebido e a nova senha.<br><span class="text-xs text-blue-500">(Código de teste: 1234)</span></p>
+            <p class="text-sm text-slate-600 mb-6 text-center">Digite o código recebido no seu e-mail e a nova senha.</p>
             <form id="reset-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Código de Verificação</label>
@@ -500,10 +500,17 @@
                 if (user) {
                     if (!user.verified) {
                         this.currentEmailContext = email;
-                        db.pendingVerifications[email] = '1234';
+                        
+                        // Gera um novo código para re-envio simulado
+                        const code = Math.floor(1000 + Math.random() * 9000).toString();
+                        db.pendingVerifications[email] = code;
+                        
                         document.getElementById('verify-email-display').textContent = email;
                         this.showScreen('verify-screen');
-                        showToast('Confirme seu e-mail para continuar.', 'info');
+                        
+                        setTimeout(() => {
+                            window.showToast(`<strong>📧 E-mail Recebido:</strong><br>Seu código de verificação é: <strong>${code}</strong>`, 'email');
+                        }, 1500);
                         return;
                     }
                     this.currentUser = user;
@@ -532,12 +539,19 @@
                     db.users.push({...newUser, id: Date.now().toString()});
                 }
                 
-                db.pendingVerifications[email] = '1234'; // Mock Email
+                // Gera código dinâmico simulando sistema real
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+                db.pendingVerifications[email] = code;
                 this.currentEmailContext = email;
                 
                 document.getElementById('verify-email-display').textContent = email;
                 this.showScreen('verify-screen');
-                showToast('Conta criada! Enviamos um código.', 'success');
+                showToast('Conta criada! Enviando e-mail de confirmação...', 'info');
+                
+                // Simula entrega do e-mail na tela do usuário
+                setTimeout(() => {
+                    window.showToast(`<strong>📧 E-mail Recebido:</strong><br>Seu código de verificação é: <strong>${code}</strong>`, 'email');
+                }, 2000);
             },
 
             async verifyEmail(code) {
@@ -557,7 +571,7 @@
                     document.getElementById('login-email').value = this.currentEmailContext;
                     document.getElementById('login-password').value = '';
                 } else {
-                    showToast('Código inválido.', 'error');
+                    showToast('Código de verificação incorreto.', 'error');
                 }
             },
 
@@ -569,10 +583,18 @@
                     this.showScreen('reset-screen');
                     return;
                 }
-                db.resetCodes[email] = '1234'; 
+                
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+                db.resetCodes[email] = code; 
                 this.currentEmailContext = email;
+                
                 this.showScreen('reset-screen');
-                showToast('Código de recuperação enviado para o e-mail.', 'info');
+                showToast('Enviando código de recuperação...', 'info');
+                
+                // Simula entrega do e-mail na tela do usuário
+                setTimeout(() => {
+                    window.showToast(`<strong>📧 E-mail Recebido:</strong><br>Seu código de recuperação é: <strong>${code}</strong>`, 'email');
+                }, 2000);
             },
 
             async resetPassword(code, newPassword) {
@@ -948,16 +970,26 @@
             let bgClass = 'bg-white border-slate-200 text-slate-800';
             let icon = `<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
             
-            if(type === 'success') { bgClass = 'bg-green-50 border-green-200 text-green-800'; icon = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`; } 
-            else if (type === 'error') { bgClass = 'bg-red-50 border-red-200 text-red-800'; icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; } 
-            else if (type === 'whatsapp') { bgClass = 'bg-[#dcf8c6] border-[#25D366] text-slate-800 shadow-lg'; icon = `<svg class="w-6 h-6 text-[#128C7E] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`; }
+            if(type === 'success') { 
+                bgClass = 'bg-green-50 border-green-200 text-green-800'; 
+                icon = `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`; 
+            } else if (type === 'error') { 
+                bgClass = 'bg-red-50 border-red-200 text-red-800'; 
+                icon = `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`; 
+            } else if (type === 'whatsapp') { 
+                bgClass = 'bg-[#dcf8c6] border-[#25D366] text-slate-800 shadow-lg'; 
+                icon = `<svg class="w-6 h-6 text-[#128C7E] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`; 
+            } else if (type === 'email') {
+                bgClass = 'bg-yellow-50 border-yellow-300 text-slate-800 shadow-lg';
+                icon = `<svg class="w-6 h-6 text-yellow-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`;
+            }
 
             toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg border transform transition-all duration-300 translate-x-full ${bgClass}`;
             toast.innerHTML = `${icon} <span class="text-sm font-medium w-full">${message}</span>`;
             
             container.appendChild(toast);
             requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
-            const delay = type === 'whatsapp' ? 6000 : 3000;
+            const delay = (type === 'whatsapp' || type === 'email') ? 6000 : 3000;
             setTimeout(() => { toast.classList.add('translate-x-full'); toast.classList.add('opacity-0'); setTimeout(() => toast.remove(), 300); }, delay);
         };
 
